@@ -11,6 +11,10 @@ from dataclasses import dataclass
 
 import random
 
+ROOM = "Parveke"
+#ROOM = "Olohuone"
+
+
 window = tk.Tk()
 # specify size of window.
 window.geometry("720x500")
@@ -46,27 +50,40 @@ label_H = Label(window, anchor= tk.SW, bg= "green", fg="white", text= "Humidity:
 label_H.config(font =("Courier", 18))
 label_H.pack()
 
+# Create label to Vcc
+label_Vcc = Label(window, anchor= tk.SW, bg= "blue", fg="white", text= "Vcc: "+ " will be here")
+label_Vcc.config(font =("Courier", 18))
+label_Vcc.pack()
+
 #Visusalize
 #Testdata = []
-Tempdata = []
+Tempdata  = []
 Humiddata = []
+Vccdata   = []
 
 MONGODB_SERVER = "192.168.0.223" #Dell
+PLACE = "Koti"
 
 myclient = pymongo.MongoClient("mongodb://"+MONGODB_SERVER+":27017/")
-MYDB = myclient["Koti"]
-MYCOL = MYDB["Parveke"]
+MYDB = myclient[PLACE]
+MYCOL = MYDB[ROOM]
 
-myquery = { "Sensor": " SHT3X" }
-myquery = { "Location": "Koti/Parveke" }
+
+myquery = { "Location": PLACE+ "/"+ ROOM }
 
 @dataclass
 class Data:
     """Class for keeping track of an data to get from mongodb"""
     Currtemp  = 0
     CurrHumid = 0
+    CurrVcc   = 0
     CurrDate = "none"
 
+"""
+rooms = ["Parveke", "Olohuone"]
+for room im rooms:
+    etc...
+"""
 
 def mongodb_query():
     #mydocs = MYCOL.find(myquery).limit(10)
@@ -78,33 +95,47 @@ def mongodb_query():
      
     for doc in mydocs:
         #print(doc)
-        #temp ="none"
-        #humid="none"
+      
         Data.CurrDate= doc["Date"]
         if "Temperature" in doc:
             Data.Currtemp = doc["Temperature"]
         if "Humidity" in doc:    
             Data.CurrHumid = doc["Humidity"]
+        if "Vcc" in doc:    
+            Data.CurrVcc = doc["Vcc"]
 
         if"NodeInfo" in doc:
             pass  
             #print("Skip")
         else:
+            #print("Tempdata : "+str(Tempdata))
+            #print("Humiddata: "+str(Humiddata))
             if (Data.Currtemp != 0):
                 Tempdata.append((Data.CurrDate, Data.Currtemp))
+                Data.Currtemp  = str(Tempdata[0][1])
+                Data.CurrDate  = str(Tempdata[0][0])
                 #print(Data.CurrDate+ " Temp : "+str(Data.Currtemp)+ "°C")
             if (Data.CurrHumid != 0):
                 Humiddata.append((Data.CurrDate, Data.CurrHumid)) 
+                Data.CurrHumid = str(Humiddata[0][1])
                 #print(Data.CurrDate+ " Humid: "+str(Data.CurrHumid)+"%")
+            if (Data.CurrVcc != 0):
+                Vccdata.append((Data.CurrVcc, Data.CurrVcc)) 
+                Data.CurrVcc = str(Vccdata[0][1])
+                #print(" Vcc: "+str(Data.CurrVcc))    
  
     #print("Tempdata : "+str(Tempdata))
     #print("Humiddata: "+str(Humiddata))
-    Data.Currtemp  = str(Tempdata[0][1])
-    Data.CurrHumid = str(Humiddata[0][1])
-    Data.CurrDate  = str(Tempdata[0][0])
+    #Data.Currtemp  = str(Tempdata[0][1])
+    #Data.CurrHumid = str(Humiddata[0][1])
+    #Data.CurrVcc = str(Vccdata[0][1])
+    
+    
+    print("Location: "+ doc["Location"])
     print("Date    : " + str(Data.CurrDate))
     print("TempNow : " + str(Data.Currtemp))
     print("HumidNow: " + str(Data.CurrHumid))
+    print("VccNow  : " + str(Data.CurrVcc))
 
     window.title(doc["Location"])
      
@@ -137,11 +168,11 @@ def plot_data():
       global labeldate
       labeldate["text"]= str(Data.CurrDate)
       labeldate.pack()
-      # Update Temperature label
+
+      # Update Temperature lael
       global label_T
       label_T["text"]= "Temperture: "+ str(Data.Currtemp)
       label_T.pack()
-      
       
       #label_H = Label(window, anchor= tk.SW, bg= "green", fg="white", text= "Humidity: "+ str(Data.CurrHumid))
       #label_H.config(font =("Courier", 18))
@@ -149,6 +180,13 @@ def plot_data():
       global label_H
       label_H["text"]= "Humidity: "+ str(Data.CurrHumid)
       label_H.pack()
+
+       # Create label to Vcc
+      global label_Vcc
+      label_Vcc["text"]= "Vcc: "+ str(Data.CurrVcc)
+      label_Vcc.pack()
+
+      
 
 # Scrollbar
 #s = tNErollbar(windhow)
